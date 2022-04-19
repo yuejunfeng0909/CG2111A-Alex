@@ -1,5 +1,4 @@
 #include "serialize.h"
-
 #include "packet.h"
 #include "constants.h"
 #include <math.h>
@@ -27,24 +26,16 @@ volatile TDirection dir = STOP;
    Alex's configuration constants
 */
 
-// Number of ticks per revolution from the
-// wheel encoder.
-
+// Number of ticks per revolution from the wheel encoder.
 #define COUNTS_PER_REV      220
 
 // Wheel circumference in cm.
 // We will use this to calculate forward/backward distance traveled
 // by taking revs * WHEEL_CIRC
-
 #define WHEEL_CIRC          21
 
 // Motor control pins. You need to adjust these till
 // Alex moves in the correct direction
-//#define LF                  5   // Left forward pin
-//#define LR                  6   // Left reverse pin
-//#define RF                  10  // Right forward pin
-//#define RR                  9  // Right reverse pin
-
 #define LF  (1 << 5) //PD5 - OC0B
 #define LR  (1 << 6) //PD6 - OC0A
 #define RF  (1 << 2) //PB2 - OC1B
@@ -227,6 +218,7 @@ void enablePullups()
   // Use bare-metal to enable the pull-up resistors on pins
   // 2 and 3. These are pins PD2 and PD3 respectively.
   // We set bits 2 and 3 in DDRD to 0 to make them inputs.
+
   DDRD &= ~0b00001100;
   PORTD |= 0b1100;
 }
@@ -270,6 +262,9 @@ void rightISR()
   }
 }
 
+
+// Set up the external interrupt pins INT0 and INT1
+// for falling edge triggered. Use bare-metal.
 void setupEINT()
 {
   // Use bare-metal to configure pins 2 and 3 to be
@@ -279,6 +274,10 @@ void setupEINT()
   EIMSK |= 0b00000011;
 }
 
+// Implement the external interrupt ISRs below.
+// INT0 ISR should call leftISR while INT1 ISR
+// should call rightISR.
+
 ISR(INT0_vect) {
   leftISR();
 }
@@ -287,7 +286,10 @@ ISR(INT1_vect) {
   rightISR();
 }
 
+/*
+   Setup and start codes for serial communications
 
+*/
 // Set up the serial connection.
 void setupSerial() {
   // Set up USART0 for 9600 bps, 8N1 configuration
@@ -303,7 +305,7 @@ void setupSerial() {
   //8 bits: UCSZ02/UCSZ01/UCSZ00 = 0b011 --> [2:1]=0b11
   //UCSZ02 is set to 0 in UCSR0B in startSerial()
   //UCPOL0 [0]=0b0 (always set to zero)
-  UCSR0C |= 0b00000110;
+  UCSR0C = 0b00000110;
 
   //Switch off double-speed mode/multiprocessor mode
   UCSR0A = 0;
@@ -315,25 +317,22 @@ void startSerial() {
   // Enable Rx and Tx: [4:3]=0b11
   // UCSZ02: [2] = 0b0 --> to make UCSZ0[2:0]=0b011
   // RXB80/TXB80: [1:0] = 0b00 (since we are not using 9-bit data size)
-  UCSR0B |= 0b00011000;
+  UCSR0B = 0b00011000;
 }
 
 // Read the serial port. Returns the read character in
 // ch if available. Also returns TRUE if ch is valid.
 // This will be replaced later with bare-metal code.
 int readSerial(char *buffer) {
-
   int count=0;
   //wait until bit 7 (RXC0 bit in UCSR0A register)=1
   while( (UCSR0A & 0b10000000) == 0 ); 
   buffer[count++] = UDR0; //read from UDR0 register and store in buffer
   return count;
-
 }
 
 // Write to the serial port
 void writeSerial(const char *buffer, int len) {
-
   //wait until bit 5 (UDRE0 bit in UCSR0A register)=1
   while ( (UCSR0A & 0b00100000) == 0 ); 
   for (int i=0; i<len; i++) {
@@ -343,10 +342,8 @@ void writeSerial(const char *buffer, int len) {
 
 /*
    Alex's motor drivers.
-
 */
 
-// Set up Alex's motors
 void setupMotors()
 {
   /* Our motor set up is:
@@ -366,12 +363,10 @@ void startMotors()
   //Setting up Timer 0 for Left motor
   TCNT0 = 0; //Initialise counter to start from 0
   TCCR0B = 0b00000011; // Set clk source to clk/64 --> CS0[2:0] = 0b011; WGM02 [3]=0b0
-  TIMSK0 = 0b110; // Enable Int for Output Compare match for counter A and B
   
   //Setting up Timer 1 for Right motor
   TCNT1 = 0; //Initialise counter to start from 0
   TCCR1B = 0b00000011; // Set clk source to clk/64
-  TIMSK1 = 0b110; // Enable Int for Output Compare match for counter A and B
 }
 
 // Convert percentages to PWM values
@@ -406,11 +401,6 @@ void forward(float dist, float speed)
 
   // LF = Left forward pin, LR = Left reverse pin
   // RF = Right forward pin, RR = Right reverse pin
-
-//  analogWrite(LF, val);
-//  analogWrite(RF, val);
-//  analogWrite(LR, 0);
-//  analogWrite(RR, 0);
   OCR0A = 0;
   OCR0B = val;
   OCR1A = 0;
@@ -439,11 +429,6 @@ void reverse(float dist, float speed)
 
   // LF = Left forward pin, LR = Left reverse pin
   // RF = Right forward pin, RR = Right reverse pin
-
-//  analogWrite(LR, val);
-//  analogWrite(RR, val);
-//  analogWrite(LF, 0);
-//  analogWrite(RF, 0);
   OCR0A = val;
   OCR0B = 0;
   OCR1A = val;
@@ -478,10 +463,6 @@ void left(float ang, float speed)
 
   // To turn left we reverse the left wheel and move
   // the right wheel forward.
-//  analogWrite(LR, val);
-//  analogWrite(RF, val);
-//  analogWrite(LF, 0);
-//  analogWrite(RR, 0);
   OCR0A = val;
   OCR0B = 0;
   OCR1A = 0;
@@ -510,11 +491,6 @@ void right(float ang, float speed)
 
   // To turn right we reverse the right wheel and move
   // the left wheel forward.
-//  analogWrite(RR, val);
-//  analogWrite(LF, val);
-//  analogWrite(LR, 0);
-//  analogWrite(RF, 0);
-  
   OCR0A = 0;
   OCR0B = val;
   OCR1A = val;
@@ -529,29 +505,12 @@ void stop()
 {
   dir = STOP;
 
-//  analogWrite(LF, 0);
-//  analogWrite(LR, 0);
-//  analogWrite(RF, 0);
-//  analogWrite(RR, 0);
-
   OCR0A = 0;
   OCR0B = 0;
   OCR1A = 0;
   OCR1B = 0;
   stop_both_motors();
 
-}
-
-ISR(TIMER0_COMPA_vect) {
-}
-
-ISR(TIMER0_COMPB_vect) {
-}
-
-ISR(TIMER1_COMPA_vect) {
-}
-
-ISR(TIMER1_COMPB_vect) {
 }
 
 void left_motor_forward(void) {
@@ -691,7 +650,6 @@ void waitForHello()
   {
     TPacket hello;
     TResult result;
-
     do
     {
       result = readPacket(&hello);
@@ -701,8 +659,6 @@ void waitForHello()
     {
       if (hello.packetType == PACKET_TYPE_HELLO)
       {
-
-
         sendOK();
         exit = 1;
       }
@@ -719,8 +675,6 @@ void waitForHello()
 }
 
 void setup() {
-  // put your setup code here, to run once:
-
   cli();
   setupEINT();
   setupSerial();
