@@ -327,32 +327,7 @@ int main()
 	createServer(KEY_FNAME, CERT_FNAME, PORTNUM, &worker, CA_CERT_FNAME, CLIENT_NAME, 1);
 	
 	while(server_is_running());
-/**
-	while(!exitFlag)
-	{
-		char ch;
-		printf("Command (f=forward, b=reverse, l=turn left, r=turn right, s=stop, c=clear stats, g=get stats q=exit)\n");
-		//scanf("%c", &ch);
-
-		// Purge extraneous characters from input stream
-		flushInput();
-
-		sendCommand(ch);
-	}
-	**/
 
 	printf("Closing connection to Arduino.\n");
 	endSerial();
 }
-
-
-/**
-Change log:
-Why are the values not being read? different type sizes for pi and arduino? or other code issue?
-After it's read once, how to make it continously read the values again? (read x_y_z)
-changed line 183 and 184
-purpose of function at line 134, sendpacket? which is the one sending to arduino?
-Find our how to use the readssl function, so that it reads all 3 values into the buffer. what does the space do? then change it to buffer[1] and buffer[2] in getparams
-Implement the readssl function in the getparams fn?
-used int32_t instead of int for the geetparams fn
-**/
