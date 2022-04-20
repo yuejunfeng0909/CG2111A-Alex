@@ -347,10 +347,10 @@ void writeSerial(const char *buffer, int len) {
 void setupMotors()
 {
   /* Our motor set up is:
-        A1IN - Pin 5, PD5, OC0B
-        A2IN - Pin 6, PD6, OC0A
-        B1IN - Pin 10, PB2, OC1B
-        B2In - pIN 11, PB3, OC2A
+        AIN1 - Pin 5, PD5, OC0B
+        AIN2 - Pin 6, PD6, OC0A
+        BIN1 - Pin 10, PB2, OC1B
+        BIN2 - Pin 9, PB1, OC1A
   */
   //Set PIN 5, 6, 9 and 10 as output pins
   DDRD |= (LF|LR);
@@ -592,7 +592,7 @@ void clearOneCounter(int which)
       break;
   }
 }
-// Intialize Vincet's internal states
+// Intialize Alex's internal states
 
 void initializeState()
 {
