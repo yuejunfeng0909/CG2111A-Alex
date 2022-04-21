@@ -334,8 +334,8 @@ int readSerial(char *buffer) {
 // Write to the serial port
 void writeSerial(const char *buffer, int len) {
   //wait until bit 5 (UDRE0 bit in UCSR0A register)=1
-  while ( (UCSR0A & 0b00100000) == 0 ); 
   for (int i=0; i<len; i++) {
+    while ( (UCSR0A & 0b00100000) == 0 ); 
     UDR0 = buffer[i]; //write to UDR0 register
   }
 }
