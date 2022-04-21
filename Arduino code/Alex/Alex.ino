@@ -322,19 +322,26 @@ void startSerial() {
 
 // Read the serial port. Returns the read character in
 // ch if available. Also returns TRUE if ch is valid.
-// This will be replaced later with bare-metal code.
+
 int readSerial(char *buffer) {
   int count=0;
-  //wait until bit 7 (RXC0 bit in UCSR0A register)=1
-  while( (UCSR0A & 0b10000000) == 0 ); 
-  buffer[count++] = UDR0; //read from UDR0 register and store in buffer
+  
+  do {
+    
+    //wait until bit 7 (RXC0 bit in UCSR0A register)=1
+    while( (UCSR0A & 0b10000000) == 0 ); 
+    
+    buffer[count] = UDR0; //read from UDR0 register and store in buffer
+    
+  } while(buffer[count++] != '\0'); // read until end of string - '\0' is terminating character or null character
+  
   return count;
 }
 
 // Write to the serial port
 void writeSerial(const char *buffer, int len) {
-  //wait until bit 5 (UDRE0 bit in UCSR0A register)=1
   for (int i=0; i<len; i++) {
+    //wait until bit 5 (UDRE0 bit in UCSR0A register)=1
     while ( (UCSR0A & 0b00100000) == 0 ); 
     UDR0 = buffer[i]; //write to UDR0 register
   }
